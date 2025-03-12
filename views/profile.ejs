@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    .profile-container {
+      width: 400px;
+      margin: 100px auto;
+      padding: 20px;
+      background-color: white;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    p {
+      font-size: 16px;
+      color: #333;
+      margin: 10px 0;
+    }
+
+    .back-btn {
+      display: block;
+      margin-top: 20px;
+      text-align: center;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+
+    .back-btn:hover {
+      background-color: #45a049;
+    }
+    image{
+      width: 100px;
+      height: 150px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="profile-container">
+    <h2>User Profile</h2>
+    <p><strong>id:</strong> <%= user.id %></p>
+    <p><strong>Name:</strong> <%= user.uname %></p>
+    <p><strong>Email:</strong> <%= user.email %></p>
+    <p><strong>Role:</strong> <%= user.role %></p>
+
+    You can add more profile details as needed
+    
+  
+  <a href="/auth/users" class="back-btn">See Users..</a>
+  <a href="/auth/logout" class="back-btn">LogOut</a>
+  </div>
+
+</body>
+</html>
