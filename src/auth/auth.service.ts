@@ -38,6 +38,11 @@ export class AuthService {
 
   async create(createAuthDto: CreateAuthDto, profileImagePath: string,res) {
     try {
+
+      const check_email=await this.authRepository.findOne({where:{email:createAuthDto.email}})
+      
+      if(!check_email)
+      {
       // Hash the password before saving the user
       const hashedPassword = await bcrypt.hash(createAuthDto.password, 10);
 
@@ -52,6 +57,8 @@ export class AuthService {
       const savedUser = await this.authRepository.save(newUser);
 
       return res.redirect('/auth/login')
+    }
+    return res.redirect('/auth/signup')
     } catch (error) {
       console.error('Error during user creation:', error.message, error.stack);
       throw new Error('Error during user creation');
