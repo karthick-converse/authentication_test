@@ -1,9 +1,11 @@
 import { IsEmail, IsEnum, isNotEmpty, IsNotEmpty, IsString, Matches, MaxLength, MinLength} from "class-validator";
 import { Roles } from "../enums/role.enums";
+import { ApiProperty } from "@nestjs/swagger";
 
 
 export class CreateAuthDto {
         @IsNotEmpty()
+        @ApiProperty()
         name:string;
     
         @IsNotEmpty({ message: 'Password is required' })
@@ -14,13 +16,16 @@ export class CreateAuthDto {
         @Matches(/(?=.*\d)/, { message: 'Password must contain at least one number' })  // At least one number
         @Matches(/(?=.*[@$!%*?&])/, { message: 'Password must contain at least one special character (e.g., @$!%*?&)' })  // At least one special character
         @IsString({ message: 'Password must be a string' })
+        @ApiProperty()
         password: string;
     
         @IsNotEmpty()
         @IsEmail({},{message:"pleace enter crt email"})
+        @ApiProperty()
         email:string;
         
         @IsEnum(Roles)
+        @ApiProperty()
         role: Roles;
         
 }

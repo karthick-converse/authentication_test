@@ -14,6 +14,7 @@ import * as fs from 'fs';
 
 import { FileInterceptor } from '@nestjs/platform-express';
 import { VerifyOtpDto } from './dto/verifiy_otp.dto';
+import { ApiTags } from '@nestjs/swagger';
 // Define the upload directory
 const UPLOADS_DIR = './uploads';
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -58,6 +59,7 @@ async create(@Body() createAuthDto: CreateAuthDto,@Res() res:Response, @Uploaded
  
  
   @Get('login')
+  @ApiTags('login')
   @Render('login') 
   loginPage() {
     return {};  // You can pass any data here if needed

@@ -3,10 +3,23 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as path from 'path';  // Correct import for 'path' module
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+
+
+  // Swagger configuration
+  const options = new DocumentBuilder()
+    .setTitle('My Auth Api')                   // API Title
+    .setDescription('My API description') // API Description
+    .setVersion('1.0')                    // API Version
+    .build();
+
+  const document = SwaggerModule.createDocument(app, options);
+  SwaggerModule.setup('api-docs', app, document); // Swagger UI endpoint
    // Enable the global validation pipe
    app.useGlobalPipes(new ValidationPipe({
     transform: true, // Automatically transforms payloads to DTOs
