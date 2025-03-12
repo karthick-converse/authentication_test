@@ -69,77 +69,101 @@ export class AuthService {
     try {
       // Check if the user exists by email
       const find_email = await this.authRepository.findOne({ where: { email: loginAuthDto.email } });
-  
+
       // If the user is not found, redirect to the signup page
       if (!find_email) {
         return res.redirect('/auth/signup'); // Redirect to signup page
       }
-  
+
       // At this point, TypeScript knows that `find_email` is not null
       const validpass = await bcrypt.compare(loginAuthDto.password, find_email.password);
-  
+
       // If password is invalid, return an error message
       if (!validpass) {
         return res.status(401).json({ message: 'Invalid password' });
       }
-  
+
       // Check if the user is verified
-      
+      if (find_email.verified) {
         // If user is already verified, create JWT and return the profile
         const payload = { role: find_email.role, id: find_email.id }; // You can add more claims if necessary
         const jwtToken = this.jwtservice.sign(payload); // Generate JWT token
-          // Set the JWT token in a cookie called 'auth_token'
-      res.cookie('auth_token', jwtToken, {
-        httpOnly: true, // Makes the cookie accessible only via HTTP requests (prevents JS access)
-        secure: process.env.NODE_ENV === 'production', // Set secure flag only in production (requires HTTPS)
-        maxAge: 3600000, // Set cookie expiration time (1 hour in this case)
-      });
+        
+        // Set the JWT token in a cookie called 'auth_token'
+        res.cookie('auth_token', jwtToken, {
+          httpOnly: true, // Makes the cookie accessible only via HTTP requests (prevents JS access)
+          secure: process.env.NODE_ENV === 'production', // Set secure flag only in production (requires HTTPS)
+          maxAge: 3600000, // Set cookie expiration time (1 hour in this case)
+        });
+
         // Respond with the JWT token and user profile
         return res.status(200).redirect('/auth/profile');
-      // } else {
-      //   // If the user is not verified, generate OTP for 2FA
-      //   const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
-      //   console.log('Generated OTP:', otp);
-  
-      //   // Store the OTP temporarily in the database (with expiration)
-      //   await this.authRepository.update(find_email.id, {
-      //     otp: otp,
-      //     otpExpires: Date.now() + 5 * 60 * 1000, // OTP expires in 5 minutes
-      //   });
-  
-      //   // Send OTP to the user's email using Nodemailer
-      //   const transporter = nodemailer.createTransport({
-      //     service: 'gmail', // or your email service
-      //     auth: {
-      //       user: 'tkarthick550@gmail.com',
-      //       pass: 'jbmr gxek mlya qmrv', // Use environment variables for sensitive info
-      //     },
-      //     tls: {
-      //       rejectUnauthorized: false,  // This is used to allow the connection in case of certificate issues
-      //     },
-      //     port: 587
-      //   });
-  
-      //   const mailOptions = {
-      //     from: 'tkarthick550@gmail.com',
-      //     to: find_email.email,
-      //     subject: 'Your 2FA OTP',
-      //     text: `Your OTP for login is ${otp}. It will expire in 5 minutes.`,
-      //   };
-  
-      //   // Send the OTP email
-      //   await transporter.sendMail(mailOptions);
-  
-      //   // Redirect the user to the OTP verification page
-      //   return res.redirect('/auth/profile');
-      // }
+      } else {
+        // If the user is not verified, generate OTP for 2FA
+        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
+        console.log('Generated OTP:', otp);
+
+        // Store the OTP temporarily in the database (with expiration)
+        await this.authRepository.update(find_email.id, {
+          otp: otp,
+          otpExpires: Date.now() + 5 * 60 * 1000, // OTP expires in 5 minutes
+        });
+
+        // Send OTP to the user's email using Nodemailer
+        const transporter = nodemailer.createTransport({
+          service: 'gmail', // or your email service
+          auth: {
+            user: 'tkarthick550@gmail.com', // Use environment variables for sensitive info
+            pass: 'jbmr gxek mlya qmrv',  // Use environment variables for sensitive info
+          },
+          tls: {
+            rejectUnauthorized: false,  // This is used to allow the connection in case of certificate issues
+          },
+          port: 587
+        });
+
+        const mailOptions = {
+          from: 'tkarthick550@gmail.com',
+          to: find_email.email,
+          subject: 'Your 2FA OTP',
+          text: `Your OTP for login is ${otp}. It will expire in 5 minutes.`,
+        };
+
+        // Send the OTP email
+        await transporter.sendMail(mailOptions);
+
+        // Redirect the user to the OTP verification page
+        return res.redirect('/auth/verify-otp');
+      }
     } catch (error) {
       console.error('Error during login:', error);
       return res.status(500).json({ message: 'Internal server error' });
     }
   }
-  
 
+  async otpverify(verifyOtp, Res: Response){
+
+     const mail=await this.authRepository.findOne({where:{email:verifyOtp.email}})
+     if(!mail){
+      return "give the crt email or crt otp"
+     }
+     if(verifyOtp.otp==mail.otp){
+      const payload = { role: mail.role, id: mail.id }; // You can add more claims if necessary
+      const jwtToken = this.jwtservice.sign(payload); // Generate JWT token
+      
+
+      // Set the JWT token in a cookie called 'auth_token'
+      Res.cookie('auth_token', jwtToken, {
+        httpOnly: true, // Makes the cookie accessible only via HTTP requests (prevents JS access)
+        secure: process.env.NODE_ENV === 'production', // Set secure flag only in production (requires HTTPS)
+        maxAge: 3600000, // Set cookie expiration time (1 hour in this case)
+      });
+
+      await this.authRepository.update(mail.id,{verified:true})
+      return Res.redirect("/auth/profile")
+     }
+     
+  }
   async getsingle(){
     const users=await this.authRepository.find();
     return {users};

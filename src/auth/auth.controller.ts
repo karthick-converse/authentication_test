@@ -13,6 +13,7 @@ import { diskStorage } from 'multer';
 import * as fs from 'fs';
 
 import { FileInterceptor } from '@nestjs/platform-express';
+import { VerifyOtpDto } from './dto/verifiy_otp.dto';
 // Define the upload directory
 const UPLOADS_DIR = './uploads';
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -67,6 +68,16 @@ async create(@Body() createAuthDto: CreateAuthDto,@Res() res:Response, @Uploaded
     return this.authService.login(loginAuthDto, res); // Pass the response object to the service
   }
 
+  @Get('verify-otp')
+  @Render('otppage')
+  otppage(){
+    return {}
+  }
+
+@Post('verify-otp')
+verifyotp(@Body() verifyOtp:VerifyOtpDto,@Res() Res: Response){
+ return this.authService.otpverify(verifyOtp,Res)
+}
 
   @Get('logout')
   clearCookie(@Res() res: Response) {

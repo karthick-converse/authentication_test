@@ -1,10 +1,108 @@
-<form action="/auth/verify-otp" method="POST">
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" required>
-  
-    <label for="otp">Enter OTP:</label>
-    <input type="text" id="otp" name="otp" required maxlength="6">
-  
-    <button type="submit">Verify OTP</button>
-  </form>
-  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OTP Verification</title>
+  <style>
+  /* General styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f7f7f7;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.container {
+  background-color: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+}
+
+h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.otp-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #fafafa;
+}
+
+input:focus {
+  border-color: #4CAF50;
+  outline: none;
+  background-color: #fff;
+}
+
+button {
+  padding: 10px;
+  background-color: #4CAF50;
+  color: white;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+button:active {
+  background-color: #388e3c;
+}
+</style>
+</head>
+<body>
+  <div class="container">
+    <h2>OTP Verification</h2>
+    <form action="/auth/verify-otp" method="POST" class="otp-form">
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="otp">Enter OTP:</label>
+        <input type="text" id="otp" name="otp" required maxlength="6">
+      </div>
+      
+      <button type="submit" class="btn">Verify OTP</button>
+    </form>
+  </div>
+</body>
+</html>
