@@ -7,6 +7,8 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { Roles } from './enums/role.enums';
 import { LoginAuthDto } from './dto/login-auth.dto';
+import * as nodemailer from 'nodemailer';
+
 
 
 describe('AuthService', () => {
@@ -159,46 +161,141 @@ describe('AuthService', () => {
   });
 
   // Test case for login - successful login
-  it('should redirect to profile and set JWT cookie if login is successful', async () => {
-    const loginAuthDto: LoginAuthDto = {
-      email: 'test@example.com',
-      password: 'password123',
-    };
+it('should redirect to profile and set JWT cookie if login is successful', async () => {
+  const loginAuthDto: LoginAuthDto = {
+    email: 'test@example.com',
+    password: 'password123',
+  };
 
-    const fakeUser = {
-      id: 1,
-      email: 'test@example.com',
-      password: 'hashedPassword123',
-      role: Roles.user,
-    };
+  const fakeUser = {
+    id: 1,
+    email: 'test@example.com',
+    password: 'hashedPassword123',
+    role: Roles.user,
+    verified: true, // Assuming user is verified in this case
+  };
 
-    // Mock the findOne method to simulate user found
-    (authRepository.findOne as jest.Mock).mockResolvedValue(fakeUser);
+  // Mock the findOne method to simulate the user being found
+  (authRepository.findOne as jest.Mock).mockResolvedValue(fakeUser);
 
-    // Mock bcrypt.compare to return true, simulating valid password
-    bcryptCompareSpy.mockResolvedValue(true);
+  // Mock bcrypt.compare to return true, simulating valid password
+  bcryptCompareSpy.mockResolvedValue(true);
 
-    // Mock JwtService sign method
-    (jwtService.sign as jest.Mock).mockReturnValue('fake-jwt-token');
+  // Mock JwtService sign method
+  (jwtService.sign as jest.Mock).mockReturnValue('fake-jwt-token');
 
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-      cookie: jest.fn(),
-      redirect: jest.fn(),
-    } as any;
+  const res = {
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn(),
+    cookie: jest.fn(),
+    redirect: jest.fn(),
+  } as any;
 
-    await authService.login(loginAuthDto, res);
+  // Call the login method
+  await authService.login(loginAuthDto, res);
 
-    expect(bcryptCompareSpy).toHaveBeenCalledWith(loginAuthDto.password, fakeUser.password);
-    expect(jwtService.sign).toHaveBeenCalledWith({ role: fakeUser.role, id: fakeUser.id });
-    expect(res.cookie).toHaveBeenCalledWith('auth_token', 'fake-jwt-token', {
-      httpOnly: true,
-      secure: false,
-      maxAge: 3600000,
-    });
-    expect(res.redirect).toHaveBeenCalledWith('/auth/profile');
+  // Assert bcrypt.compare was called with correct arguments
+  expect(bcryptCompareSpy).toHaveBeenCalledWith(loginAuthDto.password, fakeUser.password);
+
+  // Assert JwtService sign was called with the correct payload
+  expect(jwtService.sign).toHaveBeenCalledWith({ role: fakeUser.role, id: fakeUser.id });
+
+  // Assert the cookie was set correctly with the JWT token
+  expect(res.cookie).toHaveBeenCalledWith('auth_token', 'fake-jwt-token', {
+    httpOnly: true,
+    secure: false,
+    maxAge: 3600000,
   });
+
+  // Assert redirection to profile
+  expect(res.redirect).toHaveBeenCalledWith('/auth/profile');
+});
+
+// Test case for login - invalid password
+it('should return 401 status if password is invalid', async () => {
+  const loginAuthDto: LoginAuthDto = {
+    email: 'test@example.com',
+    password: 'wrongpassword',
+  };
+
+  const fakeUser = {
+    id: 1,
+    email: 'test@example.com',
+    password: 'hashedPassword123',
+    role: Roles.user,
+    verified: true, // Assuming user is verified
+  };
+
+  // Mock the findOne method to simulate user found
+  (authRepository.findOne as jest.Mock).mockResolvedValue(fakeUser);
+
+  // Mock bcrypt.compare to return false, simulating invalid password
+  bcryptCompareSpy.mockResolvedValue(false);
+
+  const res = {
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn(),
+    cookie: jest.fn(),
+    redirect: jest.fn(),
+  } as any;
+
+  // Call the login method
+  await authService.login(loginAuthDto, res);
+
+  // Assert bcrypt.compare was called with the correct arguments
+  expect(bcryptCompareSpy).toHaveBeenCalledWith(loginAuthDto.password, fakeUser.password);
+
+  // Assert that a 401 status is returned with an error message
+  expect(res.status).toHaveBeenCalledWith(401);
+  expect(res.json).toHaveBeenCalledWith({ message: 'Invalid password' });
+});
+
+// Test case for login - unverified user (OTP flow)
+it('should redirect to OTP verification if user is unverified', async () => {
+  const loginAuthDto: LoginAuthDto = {
+    email: 'test@example.com',
+    password: 'password123',
+  };
+
+  const fakeUser = {
+    id: 1,
+    email: 'test@example.com',
+    password: 'hashedPassword123',
+    role: Roles.user,
+    verified: false, // User is not verified
+  };
+
+  // Mock the findOne method to simulate user found
+  (authRepository.findOne as jest.Mock).mockResolvedValue(fakeUser);
+
+  // Mock bcrypt.compare to return true, simulating valid password
+  bcryptCompareSpy.mockResolvedValue(true);
+
+  // Mock Nodemailer transporter to avoid sending real emails during tests
+  const transporterSpy = jest.spyOn(nodemailer, 'createTransport').mockReturnValue({
+    sendMail: jest.fn(),
+  } as any);
+
+  // Mock JwtService sign method to avoid JWT creation
+  (jwtService.sign as jest.Mock).mockReturnValue('fake-jwt-token');
+
+  const res = {
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn(),
+    cookie: jest.fn(),
+    redirect: jest.fn(),
+  } as any;
+
+  // Call the login method
+  await authService.login(loginAuthDto, res);
+
+  // Assert that the OTP email is being generated and sent (mocked)
+  expect(transporterSpy).toHaveBeenCalled();
+
+  // Assert redirection to OTP verification page
+  expect(res.redirect).toHaveBeenCalledWith('/auth/verify-otp');
+});
+
 
   // Test case for updateUser method - User found
   it('should return a user if user exists', async () => {
